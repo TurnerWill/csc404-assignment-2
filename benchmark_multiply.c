@@ -1,13 +1,21 @@
+/***********************************************
+* William Turner CSC 404					   *
+* Assignment 2 benchmarking matrix multiply    *
+*              parallelization testing         *
+***********************************************/
+
 #include<time.h> /* for random number generator (filling of matrix column/row array elements),
 				    and clock functions */
 #include<stdio.h>
 #include<stdlib.h> /* for malloc (memory allocation) of dynamic arrays*/
 #include<math.h>
 
-#define N 1024 //dimension for rows and columns of square-matrices
-#define LOOPS 100 // number of accuracy improvement loops
+#define N 4 //dimension for rows and columns of square-matrices
+#define LOOPS 2000000 // number of accuracy improvement loops
+#define OPS_PER_INSTR 2
+#define CPU_CLK 2.0e9 // toshiba satellite laptop
 
-// ((2*pow(N,3)) - pow(N,2));
+// ((2*pow(N,3)) - pow(N,2)); formula used to determine number of matrix elements
 
 const int ROW_SIZE = N;
 const int COL_SIZE = N;
@@ -18,7 +26,7 @@ void deallocate(double **a, int n); // memory deallocation
 
 int main()
 {
-	int a, b, c, i, j, k, l, p, q, s, t, v; // for-loop counters
+	int a, b, c, i, j, k, l, p, q, s, t, v, x; // for-loop counters
 	double ** matrixA;
 	double ** matrixB;
 	double ** matrixC;
@@ -46,11 +54,7 @@ int main()
 			
 			}
 		}
-		
-	clock_t endA = clock();
-	
-	
-	clock_t beginB = clock();	
+			
 	// allocate memory for matrix B rows	
 	matrixB = malloc(ROW_SIZE*sizeof(double*));
 	//allocate memory for matrix B columns
@@ -59,31 +63,27 @@ int main()
 		matrixB[b] = malloc(COL_SIZE*sizeof(double*));
 	}	
 	//fill matrixB multidimensional array with random numbers
-		for(k=0; k<ROW_SIZE; k++)
-		{	
-			for(l=0; l<COL_SIZE; l++)
-			{
-				matrixB[k][l] = rand() % 100;
+	for(k=0; k<ROW_SIZE; k++)
+	{	
+		for(l=0; l<COL_SIZE; l++)
+		{
+			matrixB[k][l] = rand() % 100;
 			
-			}
 		}
-	clock_t endB = clock();
+	}
 			
 /*	printf("matrix A array :\n\n");			// used in testing/debugging 
-	printArray(matrixA);					// used in testing/debugging */
+	printArray(matrixA);					// used in testing/debugging 
 	
-//	system("PAUSE");						// used in testing/debugging 
-//	system("cls");							// used in testing/debugging 
+	system("PAUSE");						// used in testing/debugging 
+	system("cls");							// used in testing/debugging 
 	
-	
-	
-/*	printf("\n");						// used in testing/debugging 
+	printf("\n");						// used in testing/debugging 
 	printf("matrix B array :\n\n");		// used in testing/debugging 
-	printArray(matrixB);				// used in testing/debugging */
+	printArray(matrixB);				// used in testing/debugging 
 	
-//	system("PAUSE");					// used in testing/debugging 
-//	system("cls");						// used in testing/debugging 
-	
+	system("PAUSE");					// used in testing/debugging 
+	system("cls");						// used in testing/debugging */
 	
 	// allocate memory for matrix C rows	
 	matrixC = malloc(ROW_SIZE*sizeof(double*));
@@ -105,22 +105,30 @@ int main()
 	printTitle();
 	printf("performing matrix multiply operations...");
 	
+	/********************
+	 timed portion
+	 ********************/	
 	clock_t beginC = clock();
-    // fill matrixC with results of matrixA * matrixB (matrix multiplication)
-	for( s=0; s<ROW_SIZE; s++)
-	{
-		for( t = 0; t<ROW_SIZE; t++)
-		{
-			for( v = 0; v < ROW_SIZE; v++)
-			{
-				matrixC[s][t] += matrixA[s][v] * matrixB[v][t];
-			}
-		}			
-	}
 	
+	//accuracy improvement loops for matrix multiply time measurement
+	for(x=0; x<LOOPS; x++)
+	{
+	
+    	// fill matrixC with results of matrixA * matrixB (matrix multiplication)
+		for( s=0; s<ROW_SIZE; s++)
+		{
+			for( t = 0; t<ROW_SIZE; t++)
+			{
+				for( v = 0; v < ROW_SIZE; v++)
+				{
+					matrixC[s][t] += matrixA[s][v] * matrixB[v][t];
+				}
+			}			
+		}	
+	}
 	clock_t endC = clock();
-	printf("\a");
-	system("cls");						// used in testing/debugging 
+	
+	system("cls");					
 	
 /*	printf("\n");						// used in testing/debugging 
 	printf("matrix C array :\n\n");		// used in testing/debugging 
@@ -142,11 +150,14 @@ int main()
 	printf("# of elements per matrix:\t\t %d\n", N*N);
 	printf("# of accuracy improvement loops:\t %d\n", LOOPS);
 	printf("number of arithmetic operations:\t %.2lf\n", arithmetic_ops);	
-	printf("\nTotal Computation Time:\t\t\t %lf seconds\n\n", (double)(endTotal-beginTotal)/CLOCKS_PER_SEC);
-	printf("matrix A Computation Time:\t\t %lf seconds\n", (double)(endA-beginA)/CLOCKS_PER_SEC);
-	printf("matrix B Computation Time:\t\t %lf seconds\n", (double)(endB-beginB)/CLOCKS_PER_SEC);
-	printf("matrix C Computation Time:\t\t %lf seconds", (double)(endC-beginC)/CLOCKS_PER_SEC);
+	printf("\nTotal Computation Time:\t\t\t %lf seconds\n", (double)(endC-beginC)/CLOCKS_PER_SEC);
+	printf("\t\t\t\t\t (includes accuracy loop times)\n");
+	double matrix_time = ((double)(endC-beginC)/CLOCKS_PER_SEC)/LOOPS;
+	printf("\nNxN Matrix Multiply Computation Time:\t %.4e seconds", matrix_time);
 	printf(" (C[] = A[] * B[])\n");
+	double per_element_time = matrix_time / (N*N);
+	printf("\nComputation Time\nper Arithmetic Operation:\t\t %.3e\n", per_element_time / OPS_PER_INSTR );
+	printf("\nNumber of Cycles\nper Arithmetic Operation:\t\t %.4f\n", CPU_CLK / arithmetic_ops);
 	
 } // end main
 
@@ -180,6 +191,9 @@ void deallocate(double **a, int n)
 	free(a);
 }
 
+/*******************************
+* print title					*
+********************************/
 void printTitle()
 {
 	printf("William Turner\n");
