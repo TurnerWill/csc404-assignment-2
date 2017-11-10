@@ -157,7 +157,7 @@ int main()
 	printf(" (C[] = A[] * B[])\n");
 	double per_element_time = matrix_time / (N*N);
 	printf("\nComputation Time\nper Arithmetic Operation:\t\t %.3e\n", per_element_time / OPS_PER_INSTR );
-	printf("\nNumber of Cycles\nper Arithmetic Operation:\t\t %.4f\n", CPU_CLK / arithmetic_ops);
+	printf("\nNumber of Cycles\nper Arithmetic Operation:\t\t %.4f\n", CPU_CLK / (arithmetic_ops / matrix_time));
 	
 } // end main
 
